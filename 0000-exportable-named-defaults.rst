@@ -11,7 +11,7 @@ Summary
 
 The ``default`` declaration as specified in Haskell 2010 report is very limited. This proposal aims to make it useful
 while keeping backward compatibility. Another goal of the proposal is to leave the ``default`` declaration in the deep
-language background, in a manner of speaking; so that expert users can apply it to help beginners who are kept
+language background, in a manner of speaking, so that expert users can apply it to help beginners who are kept
 blissfully unaware of it.
 
 ##########
@@ -19,9 +19,11 @@ Motivation
 ##########
 
 Section `4.3.4<https://www.haskell.org/onlinereport/haskell2010/haskellch4.html#x10-790004.3.4>` of the Haskell 2010
-language report specifies the behaviour of the ``default`` declaration, and makes it clear that the declaration is
-fairly useless, as it applies
+language report specifies the behaviour of the ``default`` declaration. The specification sharply limits the
+declaration, as it applies
+
 - only within the current module,
+
 - only to the class ``Num``.
 
 The first limitation means that every user is forced to repeat the same declaration in every module if they should try
@@ -40,8 +42,9 @@ The present proposal is basically an expanded version of the earlier `name the
 class<https://prime.haskell.org/wiki/Defaulting#Proposal1-nametheclass>` Haskell Prime proposal.
 
 The Haskell 2010 language report specifies the following syntax for the ``default`` declaration:
+
 .. math::
-   topdecl 	→ 	\texttt{default} (type_1 , … , type_n) 	    (n ≥ 0) 
+   topdecl 	\rightarrow 	\texttt{default} \: (type_1 , … , type_n) \; (n \geq 0) 
 
 where each :math:`type_i` must be an instance of class ``Num``.
 
@@ -50,8 +53,9 @@ Naming the class
 
 In the current language standard, the ``default`` declaration implicitly applies to class ``Num`` only. The proposal is
 to make this class explicit, so the syntax becomes
+
 .. math::
-   topdecl 	→ 	\texttt{default} class? (type_1 , … , type_n) 	    (n ≥ 0) 
+   topdecl 	\rightarrow 	\texttt{default}  \: class? (type_1 , … , type_n) 	    (n \geq 0) 
 
 where each :math:`type_i` must be an instance of the specified *class*. If no *class* is specified, the earlier default
 of ``Num`` is assumed.
@@ -64,15 +68,19 @@ Exporting the defaults
 Another thing the current report specifies is that the declaration applies only within the current module. This proposal
 does not modify that behaviour: a ``default`` declaration by itself does not apply outside its module. That is the
 purpose of another extension to the module export list. To the existing syntax
+
 .. math::
-   export 	→ 	qvar
-      | 	qtycon [(..) | ( cname_1 , … , cname_n )] 	    (n ≥ 0)
-      | 	qtycls [(..) | ( var_1 , … , var_n )] 	    (n ≥ 0)
-      | 	\texttt{module} modid
+   \begin{split}
+   export	\rightarrow & \; qvar                                  \\
+     & \vert\; 	qtycon [(..) \vert ( cname_1 , … , cname_n )] \; (n \geq 0) \\
+     & \vert\; 	qtycls [(..) \vert ( var_1 , … , var_n )] 	 \; (n \geq 0) \\
+     & \vert\; 	\texttt{module} \; modid
+   \end{split}
 
 would be added another alternative
+
 .. math::
-      | 	\texttt{default} class
+      \hskip -8em \vert\; 	\texttt{default} \; class
 
 The effect of this export item would be to export the default declaration for the named *class* that is in effect in the
 module, which can mean either that it's declared in the same module or that it's imported from another module.
@@ -80,7 +88,7 @@ module, which can mean either that it's declared in the same module or that it's
 When exporting a ``default Num`` declaration, the class ``Num`` has to be explicitly named like any other class.
 
 An ``import`` of a module always imports all the ``default`` declarations listed in its export list. There is no way to
-exclude any of them. This is the default option for this proposal, but there are Alternatives_.
+exclude any of them. This is the default option for this proposal, but there are `Alternatives`_.
 
 Rules for disambiguation of multiple declarations
 =================================================
@@ -93,11 +101,15 @@ one ``default`` declaration in scope, the conflict is resolved using the followi
 2. Two declarations for the same class explicitly declared in the same module are considered a static error.
 3. A ``default`` declaration in a module takes precedence over any imported ``default`` declarations for the same class.
 4. For any two imported ``default`` declarations for the same class
-   .. math:
-      \texttt{default} C (Type_1^a , … , Type_m^a)
-      \texttt{default} C (Type_1^b , … , Type_n^b)
-   if *m* ≥ *n* and the second type sequence :math:`Type_1^b , … , Type_n^b` is a sub-sequence of the first sequence
-   :math:`Type_1^a , … , Type_m^a`, the first declaration subsumes the second one which can be ignored.
+   
+   .. math::
+         \begin{split}
+         \texttt{default} & \; C (Type_1^a , … , Type_m^a) \\
+         \texttt{default} & \; C (Type_1^b , … , Type_n^b)
+         \end{split}
+
+   if :math:`m \geq n` and the second type sequence :math:`Type_1^b , … , Type_n^b` is a sub-sequence of the first
+   sequence :math:`Type_1^a , … , Type_m^a`, the first declaration subsumes the second one which can be ignored.
 5. If a class has neither a local ``default`` declaration nor an imported ``default`` declaration that subsumes all
    other imported ``default`` declarations for the class, the conflict between the imports is unresolvable. The effect
    is to ignore all ``default`` declarations for the class, so that no declaration is in effect in the module.
@@ -109,7 +121,9 @@ The disambiguation rules are a conservative extension of the existing rules in H
 type variable *v* is defaultable if:
 
     - *v* appears only in constraints of the form *C* *v*, where *C* is a class, and
-    - at least one of these classes is a numeric class, (that is, *Num* or a subclass of *Num*), and
+
+    - at least one of these classes is a numeric class, (that is, ``Num`` or a subclass of ``Num``), and
+
     - all of these classes are defined in the Prelude or a standard library.
 
     Each defaultable variable is replaced by the first type in the default list that is an instance of all the ambiguous
@@ -118,6 +132,7 @@ type variable *v* is defaultable if:
 The new rules require instead that 
 
 - *v* appears only in constraints of the form *C* *v*, where *C* is a class, and
+
 - there is a ``default`` declaration in effect for at least one of these classes.
 
 The type selection process remains the same for any given class *C*. If there are multiple *C* *v* constraints with
@@ -134,15 +149,15 @@ extension, usually for the purpose of using the ``Text`` data type instead of ``
 
 With this proposal in effect, and some form of ``FlexibleInstances``, the Haskell Prelude could export the declaration
 
-.. Haskell::
+::
+
    default IsString (String)
 
 Then a user module could activate the ``OverloadedStrings`` extension without triggering any ambiguous type errors,
 still using the ``String`` type from the Prelude.
 
-The authors of the alternative string implementations like ``Text`` would export the following declaration instead:
+The authors of the alternative string implementations like ``Text`` would export the following declaration instead::
 
-.. Haskell::
    default IsString (Text, String)
 
 Any user module that activates the ``OverloadedStrings`` extension and imports ``Data.Text`` would thus obtain the
@@ -151,16 +166,14 @@ types is a sub-sequence of the latter declarations, it would be subsumed by it.
 
 A user module could, by chance or by design, import two independently-developed modules that export competing defaults
 for the same class, for example the previous ``Text`` module and the ``Foundation.String`` module with its own exported
-declaration
+declaration ::
 
-.. Haskell::
    default IsString (Foundation.String, String)
 
 In this case the importing module would discard both contradictory declarations. If the developers wish a particular
 default, they just have to declare it in the importing module. Furthermore, if they export this ``default`` declaration,
-every importer of the module will have the conflicts resolved for them:
+every importer of the module will have the conflicts resolved for them::
 
-.. Haskell::
    module ProjectImports (Text.Text, Foundation.String, default IsString)
 
    import qualified Data.Text         as Text
@@ -176,9 +189,8 @@ Use-site conflicts
 ==================
 
 The earlier `Haskell Prime proposal<https://prime.haskell.org/wiki/Defaulting>` notes several ways in which defaults for
-different classes can contradict each other:
-
-.. Haskell::
+different classes can contradict each other::
+   
    default A (Int,String,())
    default B (String,(),Int)
    (A t, B t) => t
@@ -188,7 +200,9 @@ different classes can contradict each other:
    (C t, D t) => t
 
 The solution to this depends on where the conflicting defaults come from.
+
 - If they are declared in the same module: just don't do that; or
+
 - if the defaults are imported, declare one or more overriding defaults to resolve the conflict.
 
 ############
@@ -224,24 +238,26 @@ This proposal does not cover MPTCs, but this section will speculate how it could
 First, let us generalize the single-parameter type class defaults by expanding the class name and the type name to full
 constraints. The above example
 
-.. Haskell::
+::
+   
    default IsString (Text, String)
 
 would then be written as
 
-.. Haskell::
+::
+   
    default IsString t => (t ~ Text, t ~ String)
 
 The former notation would be syntactic sugar for the latter. Since comma is already used as a constraint combinator,
 we'd actually prefer to replace it by something else. The logical choice would be semicolon, which tends to be contained
-in braces:
-
-.. Haskell::
+in braces::
+  
    default IsString t => {t ~ Text; t ~ String}
 
 So now we have a general enough notation to accommodate MPTCs. We could, for example, say
 
-.. Haskell::
+::
+  
    default HasKey m k => {m ~ IntMap, k ~ Int; m ~ Map k; m ~ [k]; m ~ Map k, k ~ String}
 
 The defaulting algorithm would replace the constraint on the left hand side consecutively by each semicolon-separated
