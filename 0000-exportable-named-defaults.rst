@@ -44,7 +44,7 @@ class<https://prime.haskell.org/wiki/Defaulting#Proposal1-nametheclass>` Haskell
 The Haskell 2010 language report specifies the following syntax for the ``default`` declaration:
 
 .. math::
-   topdecl 	\rightarrow 	\texttt{default} \: (type_1 , … , type_n) \; (n \geq 0) 
+   topdecl 	\rightarrow 	\texttt{default} \; (type_1 , … , type_n) \; (n \geq 0) 
 
 where each :math:`type_i` must be an instance of class ``Num``.
 
@@ -55,7 +55,7 @@ In the current language standard, the ``default`` declaration implicitly applies
 to make this class explicit, so the syntax becomes
 
 .. math::
-   topdecl 	\rightarrow 	\texttt{default}  \: class? (type_1 , … , type_n) 	    (n \geq 0) 
+   topdecl 	\rightarrow 	\texttt{default}  \; class? \; (type_1 , … , type_n) \; (n \geq 0) 
 
 where each :math:`type_i` must be an instance of the specified *class*. If no *class* is specified, the earlier default
 of ``Num`` is assumed.
@@ -82,13 +82,13 @@ would be added another alternative
 .. math::
       \hskip -8em \vert\; 	\texttt{default} \; class
 
-The effect of this export item would be to export the default declaration for the named *class* that is in effect in the
-module, which can mean either that it's declared in the same module or that it's imported from another module.
+The effect of this export item would be to export the default declaration that is in effect in the module for the
+named *class*, which can mean either that it's declared in the same module or that it's imported from another module.
 
 When exporting a ``default Num`` declaration, the class ``Num`` has to be explicitly named like any other class.
 
-An ``import`` of a module always imports all the ``default`` declarations listed in its export list. There is no way to
-exclude any of them. This is the default option for this proposal, but there are `Alternatives`_.
+An ``import`` of a module always imports all the ``default`` declarations listed in the module's export list. There is
+no way to exclude any of them. This is the default option for this proposal, but there are `alternatives`_.
 
 Rules for disambiguation of multiple declarations
 =================================================
@@ -104,8 +104,8 @@ one ``default`` declaration in scope, the conflict is resolved using the followi
    
    .. math::
          \begin{split}
-         \texttt{default} & \; C (Type_1^a , … , Type_m^a) \\
-         \texttt{default} & \; C (Type_1^b , … , Type_n^b)
+         \texttt{default} & \; C \; (Type_1^a , … , Type_m^a) \\
+         \texttt{default} & \; C \; (Type_1^b , … , Type_n^b)
          \end{split}
 
    if :math:`m \geq n` and the second type sequence :math:`Type_1^b , … , Type_n^b` is a sub-sequence of the first
@@ -147,39 +147,44 @@ Examples
 The main motivation for expanding the ``default`` rules is the widespread use of the ``OverloadedStrings`` language
 extension, usually for the purpose of using the ``Text`` data type instead of ``String``.
 
-With this proposal in effect, and some form of ``FlexibleInstances``, the Haskell Prelude could export the declaration
+With this proposal in effect, and some form of ``FlexibleInstances``, the Haskell Prelude could export the declarations
 
 ::
 
    default IsString (String)
+   default IsList ([])
 
-Then a user module could activate the ``OverloadedStrings`` extension without triggering any ambiguous type errors,
-still using the ``String`` type from the Prelude.
+Then a user module could activate the ``OverloadedStrings`` or ``OverloadedLists`` extension without triggering any
+ambiguous type errors, still using the ``String`` and list type from the Prelude.
 
 The authors of the alternative string implementations like ``Text`` would export the following declaration instead::
 
    default IsString (Text, String)
 
 Any user module that activates the ``OverloadedStrings`` extension and imports ``Data.Text`` would thus obtain the
-default declaration suitable for working with ``Text`` without any extra effort. Since the Prelude declaration's list of
-types is a sub-sequence of the latter declarations, it would be subsumed by it.
+default declaration suitable for working with ``Text`` without any extra effort. Since the Prelude declaration's list
+of types is a sub-sequence of the latter declarations, it would be subsumed by it.
 
 A user module could, by chance or by design, import two independently-developed modules that export competing defaults
-for the same class, for example the previous ``Text`` module and the ``Foundation.String`` module with its own exported
-declaration ::
+for the same class, for example the previous ``Text`` module and the ``Foundation.String`` module with its own
+exported declaration ::
 
    default IsString (Foundation.String, String)
 
 In this case the importing module would discard both contradictory declarations. If the developers wish a particular
-default, they just have to declare it in the importing module. Furthermore, if they export this ``default`` declaration,
-every importer of the module will have the conflicts resolved for them::
+default, they just have to declare it in the importing module. Furthermore, if they export this ``default``
+declaration, every importer of the module will have the conflicts resolved for them::
 
-   module ProjectImports (Text.Text, Foundation.String, default IsString)
+   module ProjectImports (Text.Text, Foundation.String,
+                          default IsString)
 
    import qualified Data.Text         as Text
    import qualified Foundation.String as Foundation
 
    default IsString (Text.Text, Foundation.String, String)
+
+An equivalent story can be told for the ``OverloadedLists``, by replacing ``Text`` and ``Foundation.String`` by
+``Vector`` and ``Foundation.String`` by ``Foundation.Array``.
 
 #########
 Drawbacks
@@ -219,12 +224,13 @@ As stated above, the default option is to automatically import all ``default`` d
 choice given. If a default is unwanted, it can easily be modified or turned off by another ``default`` declaration.
 
 This choice has been made because it seems to be easiest on the beginners: they don't need to know anything about
-defaults, especially if they work with a prepared set of imports that take care to resolve all ``default`` conflicts for
-them.
+defaults, especially if they work with a prepared set of imports that take care to resolve the potential ``default``
+conflicts for them.
 
 An alternative approach would be to treat default exports the same way normal named exports are treated: if an
-``import`` declaration explicitly lists the names it wants to import, it has to also explicitly list ``default`` and the
-class name for each desired default declaration.
+``import`` declaration explicitly lists the names it wants to import, it has to also explicitly list ``default`` and
+the class name for each desired default declaration. While this solution would probably leave the language more
+consistent, it would also make its infamous learning curve even steeper for beginners.
 
 An optional extension compatible with either of these alternatives would be to allow the ``hiding`` clause to list the
 ``default`` declarations that should not be brought into the scope. This is not a part of the present proposal simply
@@ -235,8 +241,8 @@ Multi-parameter type classes
 
 This proposal does not cover MPTCs, but this section will speculate how it could be extended to cover them in future.
 
-First, let us generalize the single-parameter type class defaults by expanding the class name and the type name to full
-constraints. The above example
+First, let us generalize the single-parameter type class defaults by expanding the class name and each type name to
+full constraints. The above example
 
 ::
    
@@ -258,7 +264,10 @@ So now we have a general enough notation to accommodate MPTCs. We could, for exa
 
 ::
   
-   default HasKey m k => {m ~ IntMap, k ~ Int; m ~ Map k; m ~ [k]; m ~ Map k, k ~ String}
+   default HasKey m k => {m ~ IntMap, k ~ Int;
+                          m ~ Map k;
+                          m ~ [k];
+                          m ~ Map k, k ~ String}
 
 The defaulting algorithm would replace the constraint on the left hand side consecutively by each semicolon-separated
 constraint group on the right-hand side until it finds one that completely resolves the ambiguity.
