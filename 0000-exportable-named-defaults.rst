@@ -18,7 +18,7 @@ blissfully unaware of it.
 Motivation
 ##########
 
-Section `4.3.4<https://www.haskell.org/onlinereport/haskell2010/haskellch4.html#x10-790004.3.4>` of the Haskell 2010
+Section `4.3.4 <https://www.haskell.org/onlinereport/haskell2010/haskellch4.html#x10-790004.3.4>`_ of the Haskell 2010
 language report specifies the behaviour of the ``default`` declaration. The specification sharply limits the
 declaration, as it applies
 
@@ -38,15 +38,14 @@ literals.
 Detailed design
 ###############
 
-The present proposal is basically an expanded version of the earlier `name the
-class<https://prime.haskell.org/wiki/Defaulting#Proposal1-nametheclass>` Haskell Prime proposal.
+The present proposal is basically an expanded version of the earlier `name the class
+<https://prime.haskell.org/wiki/Defaulting#Proposal1-nametheclass>`_ Haskell Prime proposal.
 
 The Haskell 2010 language report specifies the following syntax for the ``default`` declaration:
 
-.. math::
-   topdecl 	\rightarrow 	\texttt{default} \; (type_1 , … , type_n) \; (n \geq 0) 
+|      topdecl → ``default`` (*qtycon*\ `1`:subscript: , … , *qtycon*\ `n`:subscript:) (n ≥ 0)
 
-where each :math:`type_i` must be an instance of class ``Num``.
+where each *type*\ `i`:subscript: must be an instance of class ``Num``.
 
 Naming the class
 ================
@@ -54,41 +53,35 @@ Naming the class
 In the current language standard, the ``default`` declaration implicitly applies to class ``Num`` only. The proposal is
 to make this class explicit, so the syntax becomes
 
-.. math::
-   topdecl 	\rightarrow 	\texttt{default}  \; class? \; (type_1 , … , type_n) \; (n \geq 0) 
+|      topdecl → ``default`` *qtycls*? (*qtycon*\ `1`:subscript: , … , *qtycon*\ `n`:subscript:) (n ≥ 0)
 
-where each :math:`type_i` must be an instance of the specified *class*. If no *class* is specified, the earlier default
-of ``Num`` is assumed.
+where each *type*\ `i`:subscript:` must be an instance of the specified class *qtycls*. If no class is specified, the
+earlier default of ``Num`` is assumed.
 
-The types may belong to any kind, but the *class* must have a single parameter.
+The types may belong to any kind, but the class must have a single parameter.
 
 Exporting the defaults
 ======================
 
-Another thing the current report specifies is that the declaration applies only within the current module. This proposal
-does not modify that behaviour: a ``default`` declaration by itself does not apply outside its module. That is the
-purpose of another extension to the module export list. To the existing syntax
+Another thing the current report specifies is that the declaration applies only within the current module. This
+proposal does not modify that behaviour: a ``default`` declaration by itself does not apply outside its module. That
+is the purpose of another extension to the module export list. To the existing syntax
 
-.. math::
-   \begin{split}
-   export	\rightarrow & \; qvar                                  \\
-     & \vert\; 	qtycon [(..) \vert ( cname_1 , … , cname_n )] \; (n \geq 0) \\
-     & \vert\; 	qtycls [(..) \vert ( var_1 , … , var_n )] 	 \; (n \geq 0) \\
-     & \vert\; 	\texttt{module} \; modid
-   \end{split}
-
-would be added another alternative
-
-.. math::
-      \hskip -8em \vert\; 	\texttt{default} \; class
+|       export → *qvar*
+|              | *qtycon* [(..) | ( *cname*\ `1`:subscript: , … , *cname*\ `n`:subscript: )]  (n ≥ 0)
+|              | *qtycls* [(..) | ( *var*\ `1`:subscript: , … , *var*\ `n`:subscript: )] 	  (n ≥ 0)
+|              | ``module`` *modid*
+| would be added another alternative
+|              | ``default`` *qtycls*
 
 The effect of this export item would be to export the default declaration that is in effect in the module for the
-named *class*, which can mean either that it's declared in the same module or that it's imported from another module.
+named class *qtycls*, which can mean either that it's declared in the same module or that it's imported from another
+module.
 
 When exporting a ``default Num`` declaration, the class ``Num`` has to be explicitly named like any other class.
 
 An ``import`` of a module always imports all the ``default`` declarations listed in the module's export list. There is
-no way to exclude any of them. This is the default option for this proposal, but there are `alternatives`_.
+no way to exclude any of them. This is the default option for this proposal, but there are `alternatives`_
 
 Rules for disambiguation of multiple declarations
 =================================================
@@ -99,17 +92,16 @@ one ``default`` declaration in scope, the conflict is resolved using the followi
 1. Two declarations for two different classes are not considered to be in conflict; they can, however, clash at a
    particular use site as we'll see in the following section.
 2. Two declarations for the same class explicitly declared in the same module are considered a static error.
-3. A ``default`` declaration in a module takes precedence over any imported ``default`` declarations for the same class.
+3. A ``default`` declaration in a module takes precedence over any imported ``default`` declarations for the same
+   class.
 4. For any two imported ``default`` declarations for the same class
    
-   .. math::
-         \begin{split}
-         \texttt{default} & \; C \; (Type_1^a , … , Type_m^a) \\
-         \texttt{default} & \; C \; (Type_1^b , … , Type_n^b)
-         \end{split}
+   |      ``default`` *C*  (*Type*\ `1`:subscript:\ `a`:superscript: , … , *Type*\ `m`:subscript:\ `a`:superscript:)
+   |      ``default`` *C*  (*Type*\ `1`:subscript:\ `b`:superscript: , … , *Type*\ `n`:subscript:\ `b`:superscript:)
 
-   if :math:`m \geq n` and the second type sequence :math:`Type_1^b , … , Type_n^b` is a sub-sequence of the first
-   sequence :math:`Type_1^a , … , Type_m^a`, the first declaration subsumes the second one which can be ignored.
+   if *m* ≥ *n* and the second type sequence *Type*\ `1`:subscript:\ `b`:superscript: , … , *Type*\ `n`:subscript:\
+   `b`:superscript: is a sub-sequence of the first sequence *Type*\ `1`:subscript:\ `a`:superscript: , … , *Type*\ 
+   `m`:subscript:\ `a`:superscript:, the first declaration subsumes the second one which can be ignored.
 5. If a class has neither a local ``default`` declaration nor an imported ``default`` declaration that subsumes all
    other imported ``default`` declarations for the class, the conflict between the imports is unresolvable. The effect
    is to ignore all ``default`` declarations for the class, so that no declaration is in effect in the module.
@@ -117,8 +109,8 @@ one ``default`` declaration in scope, the conflict is resolved using the followi
 Rules for disambiguation at the use site
 ========================================
 
-The disambiguation rules are a conservative extension of the existing rules in Haskell 2010, which state that ambiguous
-type variable *v* is defaultable if:
+The disambiguation rules are a conservative extension of the existing rules in Haskell 2010, which state that
+ambiguous type variable *v* is defaultable if:
 
     - *v* appears only in constraints of the form *C* *v*, where *C* is a class, and
 
@@ -193,8 +185,8 @@ Drawbacks
 Use-site conflicts
 ==================
 
-The earlier `Haskell Prime proposal<https://prime.haskell.org/wiki/Defaulting>` notes several ways in which defaults for
-different classes can contradict each other::
+The earlier `Haskell Prime proposal <https://prime.haskell.org/wiki/Defaulting>`_ notes several ways in which defaults
+for different classes can contradict each other::
    
    default A (Int,String,())
    default B (String,(),Int)
