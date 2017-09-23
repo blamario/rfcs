@@ -32,7 +32,8 @@ to use a non-standard numeric data type in an ambiguous way.
 The reason for the latter limitation is that the numeric literals are the only literals with ambiguous types in the
 language report. Since then, however, the ``OverloadedStrings`` and ``OverloadedLists`` language extensions have made
 more syntactic constructs ambiguous. The former in particular is commonly used for more convenient coding of ``Text``
-literals.
+literals. Another potential source of ambiguity are the Prelude and the core libraries which are slowly evolving to be
+more generalized.
 
 ###############
 Detailed design
@@ -43,9 +44,9 @@ The present proposal is basically an expanded version of the earlier `name the c
 
 The Haskell 2010 language report specifies the following syntax for the ``default`` declaration:
 
-|      topdecl → ``default`` (*qtycon*\ `1`:subscript: , … , *qtycon*\ `n`:subscript:) (n ≥ 0)
+|    \ *topdecl* → ``default`` (*qtycon*\ `1`:subscript: , … , *qtycon*\ `n`:subscript:) (n ≥ 0)
 
-where each *type*\ `i`:subscript: must be an instance of class ``Num``.
+where each type *qtycon*\ `i`:subscript: must be an instance of class ``Num``.
 
 Naming the class
 ================
@@ -53,10 +54,10 @@ Naming the class
 In the current language standard, the ``default`` declaration implicitly applies to class ``Num`` only. The proposal is
 to make this class explicit, so the syntax becomes
 
-|      topdecl → ``default`` *qtycls*? (*qtycon*\ `1`:subscript: , … , *qtycon*\ `n`:subscript:) (n ≥ 0)
+|    \ *topdecl* → ``default`` *qtycls*? (*qtycon*\ `1`:subscript: , … , *qtycon*\ `n`:subscript:) (n ≥ 0)
 
-where each *type*\ `i`:subscript:` must be an instance of the specified class *qtycls*. If no class is specified, the
-earlier default of ``Num`` is assumed.
+where each type *qtycon*\ `i`:subscript: must be an instance of the specified class *qtycls*. If no class is
+specified, the earlier default of ``Num`` is assumed.
 
 The types may belong to any kind, but the class must have a single parameter.
 
@@ -67,21 +68,25 @@ Another thing the current report specifies is that the declaration applies only 
 proposal does not modify that behaviour: a ``default`` declaration by itself does not apply outside its module. That
 is the purpose of another extension to the module export list. To the existing syntax
 
-|       export → *qvar*
+
+|   \ *export* → *qvar*
 |              | *qtycon* [(..) | ( *cname*\ `1`:subscript: , … , *cname*\ `n`:subscript: )]  (n ≥ 0)
 |              | *qtycls* [(..) | ( *var*\ `1`:subscript: , … , *var*\ `n`:subscript: )] 	  (n ≥ 0)
 |              | ``module`` *modid*
+|
 | would be added another alternative
+|
+|  \ 
 |              | ``default`` *qtycls*
 
-The effect of this export item would be to export the default declaration that is in effect in the module for the
+The effect of the new alternative would be to export the default declaration that is in effect in the module for the
 named class *qtycls*, which can mean either that it's declared in the same module or that it's imported from another
 module.
 
 When exporting a ``default Num`` declaration, the class ``Num`` has to be explicitly named like any other class.
 
 An ``import`` of a module always imports all the ``default`` declarations listed in the module's export list. There is
-no way to exclude any of them. This is the default option for this proposal, but there are `alternatives`_
+no way to exclude any of them. This is the default option for this proposal, but there are `alternatives`_.
 
 Rules for disambiguation of multiple declarations
 =================================================
@@ -99,9 +104,11 @@ one ``default`` declaration in scope, the conflict is resolved using the followi
    |      ``default`` *C*  (*Type*\ `1`:subscript:\ `a`:superscript: , … , *Type*\ `m`:subscript:\ `a`:superscript:)
    |      ``default`` *C*  (*Type*\ `1`:subscript:\ `b`:superscript: , … , *Type*\ `n`:subscript:\ `b`:superscript:)
 
-   if *m* ≥ *n* and the second type sequence *Type*\ `1`:subscript:\ `b`:superscript: , … , *Type*\ `n`:subscript:\
-   `b`:superscript: is a sub-sequence of the first sequence *Type*\ `1`:subscript:\ `a`:superscript: , … , *Type*\ 
-   `m`:subscript:\ `a`:superscript:, the first declaration subsumes the second one which can be ignored.
+   if *m* ≤ *n* and the first type sequence *Type*\ `1`:subscript:\ `a`:superscript: , … , *Type*\ `m`:subscript:\
+   `a`:superscript: is a sub-sequence of the second sequence *Type*\ `1`:subscript:\ `b`:superscript: , … , *Type*\
+   `n`:subscript:\ `b`:superscript: (*i.e.*, the former can be obtained by removing a number of *Type*\
+   `i`:subscript:\ `b`:superscript: items from the latter), we say that the second declaration *subsumes* the first
+   one. The effect is to ignore the subsumed first declaration.
 5. If a class has neither a local ``default`` declaration nor an imported ``default`` declaration that subsumes all
    other imported ``default`` declarations for the class, the conflict between the imports is unresolvable. The effect
    is to ignore all ``default`` declarations for the class, so that no declaration is in effect in the module.
@@ -118,8 +125,8 @@ ambiguous type variable *v* is defaultable if:
 
     - all of these classes are defined in the Prelude or a standard library.
 
-    Each defaultable variable is replaced by the first type in the default list that is an instance of all the ambiguous
-    variable’s classes. It is a static error if no such type is found.
+    Each defaultable variable is replaced by the first type in the default list that is an instance of all the
+    ambiguous variable’s classes. It is a static error if no such type is found.
 
 The new rules require instead that 
 
@@ -127,11 +134,21 @@ The new rules require instead that
 
 - there is a ``default`` declaration in effect for at least one of these classes.
 
-The type selection process remains the same for any given class *C*. If there are multiple *C* *v* constraints with
-competing ``default`` declarations, they have to resolve to the same type. In other words, the type selected for
-defaulting has to be the first type that satisfies all the class constraints, in every ``default`` declaration in
-effect. It is a static error for different ``default`` declarations to resolve to different types, or for any of them to
-not resolve to any type.
+The type selection process remains the same for any given class *C*. If there are multiple *C*\ `i`:subscript: *v*
+constraints with competing ``default`` declarations, they have to resolve to the same type. In other words, the type
+selected for defaulting has to be the first type that satisfies all the class constraints, in every ``default``
+declaration in effect. It is a static error for different ``default`` declarations to resolve to different types, or
+for any of them to not resolve to any type.
+
+To make the design more explicit, the following algorithm *can* be used for default resolution:
+
+0. Assuming that the type inference produces the constraint set {*C*\ `1`:subscript: *v*, … , *C*\ `n`:subscript: *v*}
+   for a type variable *v*,
+1. filter the constraint set to contain only the classes with a ``default`` declaration in effect,
+2. map every found ``default`` *C*\ `i`:subscript: declaration to the first type *T*\ `i`:subscript: in its type list
+   that satisfies *all* required constraints for the ambiguous type variable *v*, and finally,
+3. if there is more than one distinct type *T*\ `i`:subscript: in the resulting type set, report a static error.
+
 
 Examples
 ========
@@ -196,7 +213,7 @@ for different classes can contradict each other::
    default D (Double,String,Int,())
    (C t, D t) => t
 
-The solution to this depends on where the conflicting defaults come from.
+The solution to this problem depends on where the conflicting defaults come from.
 
 - If they are declared in the same module: just don't do that; or
 
@@ -212,8 +229,9 @@ Declaration imports
 Most features of the present proposal are completely determined by the constraints of backward compatibility and ease of
 use, but in case of declaration imports the choice was more arbitrary.
 
-As stated above, the default option is to automatically import all ``default`` declarations the module exports, with no
-choice given. If a default is unwanted, it can easily be modified or turned off by another ``default`` declaration.
+As stated above, the default option is to automatically import all ``default`` declarations the module exports, with
+no choice offered to the importer. If a default is unwanted, it can easily be modified or turned off by another
+``default`` declaration.
 
 This choice has been made because it seems to be easiest on the beginners: they don't need to know anything about
 defaults, especially if they work with a prepared set of imports that take care to resolve the potential ``default``
@@ -228,10 +246,11 @@ An optional extension compatible with either of these alternatives would be to a
 ``default`` declarations that should not be brought into the scope. This is not a part of the present proposal simply
 because it's unnecessary.
 
-Multi-parameter type classes
-============================
+Multi-parameter type classes and other constraints
+==================================================
 
-This proposal does not cover MPTCs, but this section will speculate how it could be extended to cover them in future.
+This proposal does not cover MPTCs nor type equality constraints, but this section will speculate how it could be
+extended to cover them in future.
 
 First, let us generalize the single-parameter type class defaults by expanding the class name and each type name to
 full constraints. The above example
@@ -256,10 +275,10 @@ So now we have a general enough notation to accommodate MPTCs. We could, for exa
 
 ::
   
-   default HasKey m k => {m ~ IntMap, k ~ Int;
-                          m ~ Map k;
-                          m ~ [k];
-                          m ~ Map k, k ~ String}
+   default HasKey m k => {m ~ IntMap v, k ~ Int;
+                          m ~ Map k v;
+                          m ~ [(k, v)];
+                          m ~ Map k v, k ~ String}
 
 The defaulting algorithm would replace the constraint on the left hand side consecutively by each semicolon-separated
 constraint group on the right-hand side until it finds one that completely resolves the ambiguity.
