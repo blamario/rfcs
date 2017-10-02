@@ -132,7 +132,7 @@ The new rules require instead that
 
 - *v* appears only in constraints of the form *C* *v*, where *C* is a class, and
 
-- there is a ``default`` declaration in effect for at least one of these classes.
+- there is a ``default`` declaration in effect for at least one of these classes or their super-classes.
 
 The type selection process remains the same for any given class *C*. If there are multiple *C*\ `i`:subscript: *v*
 constraints with competing ``default`` declarations, they have to resolve to the same type. In other words, the type
@@ -144,10 +144,11 @@ To make the design more explicit, the following algorithm *can* be used for defa
 
 0. Assuming that the type inference produces the constraint set {*C*\ `1`:subscript: *v*, … , *C*\ `n`:subscript: *v*}
    for a type variable *v*,
-1. filter the constraint set to contain only the classes with a ``default`` declaration in effect,
-2. map every found ``default`` *C*\ `i`:subscript: declaration to the first type *T*\ `i`:subscript: in its type list
+1. add all super-classes of every *C*\ `i`:subscript: to the constraint set,
+2. filter the constraint set to contain only the classes with a ``default`` declaration in effect,
+3. map every found ``default`` *C*\ `i`:subscript: declaration to the first type *T*\ `i`:subscript: in its type list
    that satisfies *all* required constraints for the ambiguous type variable *v*, and finally,
-3. if there is more than one distinct type *T*\ `i`:subscript: in the resulting type set, report a static error.
+4. if there is more than one distinct type *T*\ `i`:subscript: in the resulting type set, report a static error.
 
 
 Examples
