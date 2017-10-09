@@ -44,16 +44,17 @@ The Greek language objection to making the lowercase lambda special closes off t
 *small*, but it's also missing a nuance or two. In particular, the typical use of lambda-the-symbol in computer science
 is something like ``λx.x``, and λx is definitely not a word of the Greek language.
 
-The present proposal takes advantage of this feature by changing the *varid* production to
+The present proposal takes advantage of this peculiarity by changing the *varid* production to
 
 |   \ *varid* → ((*small* \\ λ) {*small* | *large* | *digit* | ' }) \\ *reservedid*
 |             | λ (*greek* | *digit* | ') {*small* | *large* | *digit* | ' }
 
-where *greek* refers to any Greek letter in any case. In other words, a leading λ followed by a letter can start an
-identifier only if that letter is Greek.
+where *greek* refers to any character of Greek alphabet in any case. In other words, a λ can start an identifier only
+when followed by another Greek letter, a digit, or the apostrophe.
 
-Under this proposal, ``λ``, ``λx``, or ``λfoo`` would not be valid identifiers any more. On the other hand, Greek words
-like ``λουκουμάς`` would remain valid identifiers, together with some weirder tokens like ``λ2``, ``λ'`` or ``aλ``.
+Under this proposal, ``λ``, ``λx``, ``λ_``, ``λfoo``, or ``λBar`` would not be valid identifiers any more. On the
+other hand, Greek words like ``λουκουμάς`` would remain valid identifiers, together with some weirder tokens like
+``λ2``, ``λ'`` or ``aλ``.
 
 
 #########
@@ -74,17 +75,22 @@ Alternatives
 As mentioned above, one alternative would be to give up on the Greek language speakers, but that would seem rather
 narrow-minded.
 
-There are other possible ways to draw the distinction between Greek words and mathematical uses of λ. One particular
-sticking point is the question of whether a lone lambda character should be a valid identifier. This proposal deems it
-not one and reserves it for a more useful purpose, but one could argue for a more conservative approach.
+There are other possible ways to draw the dividing line between between Greek words and the mathematical uses of
+λ. One particular sticking point is the question of whether a lone lambda character should be a valid identifier. This
+proposal deems it not one and reserves it for more useful purposes like ``λ foo-> foo``, but one could argue that it
+should be left to Greeks instead.
 
 
 ####################
 Unresolved questions
 ####################
 
-This proposal stops at restricting the identifier syntax. If accepted, there should be a follow-up proposal or two on
-the best use of the newly available λ. Should we be content with allowing λ instead of \\, or should we also admit the
-period and allow expressions like ``λx.x*x``? What about other Unicode characters like →, ⇒, or ∀? Whatever should
-happen, this proposal clears the way by breaking the backward compatibility and freeing λ from the confines of the
-identifier syntax.
+This proposal stops at restricting the identifier syntax. If accepted, there should be a follow-up proposal on the
+best use of the newly available λ. Should we be content with allowing λ instead of \\, or should we also admit the
+period and allow expressions like ``λx.x*x``? What about other Unicode characters recognized by JHC and by `GHC's
+UnicodeSyntax extension
+<https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#ghc-flag--XUnicodeSyntax>`_ like →,
+⇒, and ∀? Some of these questions have already been raised in an `earlier Haskell Prime proposal
+<https://prime.haskell.org/wiki/UnicodeInHaskellSource>`_.  Whatever should happen, this proposal clears the way by
+breaking the backward compatibility and freeing λ from the confines of the identifier syntax. Any Unicode support that
+doesn't admit λ its mathematical role would feel lacking.
