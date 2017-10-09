@@ -35,7 +35,8 @@ Detailed design
 
 The existing lexical syntax of Haskell variable identifiers is specified as
 
-|   \ *varid* → (*small* {*small* | *large* | *digit* | ' }) \\ *reservedid*
+|   \ *varid* → (*small* {*small* | *large* | *digit* | ' }) \\ *reservedid*  
+
 
 where *small*, *large*, and *digit* are respectively a lowercase Unicode letter or underscore, an upper or titlecase
 Unicode letter, and a Unicode decimal digit.
@@ -46,8 +47,9 @@ is something like ``λx.x``, and λx is definitely not a word of the Greek langu
 
 The present proposal takes advantage of this peculiarity by changing the *varid* production to
 
-|   \ *varid* → ((*small* \\ λ) {*small* | *large* | *digit* | ' }) \\ *reservedid*
-|             | λ (*greek* | *digit* | ') {*small* | *large* | *digit* | ' }
+|   \ *varid* → ((*small* \\ λ) {*small* | *large* | *digit* | ' }) \\ *reservedid*  
+|         \  \  | λ (*greek* | *digit* | ') {*small* | *large* | *digit* | ' }  
+
 
 where *greek* refers to any character of Greek alphabet in any case. In other words, a λ can start an identifier only
 when followed by another Greek letter, a digit, or the apostrophe.
