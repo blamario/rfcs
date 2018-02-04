@@ -11,7 +11,7 @@ Summary
 
 The lexical syntax of Haskell'98 has been designed primarily for the ASCII character set. The language report does
 acknowledge Unicode as an afterthought, but there are large gaps in its support. This proposal aims to rectify this
-while retaining backward compatibility with the existing ASCII-only Haskell code.
+while retaining backward compatibility with all existing ASCII-only Haskell code.
 
 ##########
 Motivation
@@ -19,10 +19,11 @@ Motivation
 
 There are several problems with the way Haskell grapples with Unicode:
 * The language fundamentally insists on classifying all identifiers as either capital or lowercase identifiers at the
-  lexical layer, but many Unicode scripts don't even recognize the concept. As a consequence, words of languages
-  that don't use European scripts cannot be Haskell identifiers.
+  lexical layer, but many Unicode scripts don't even recognize the concept. No word of Arabic, Chinese, and most other
+  languages that use non-European scripts cannot be Haskell identifiers as a consequence.
 * Another problem with the lexical identifier syntax is that it admits no accents and other modifier characters. This
-  excludes yet another class of languages, such as modern Greek, from providing words for Haskell identifiers.
+  excludes or deters yet another class of languages, such as modern Greek or Navajo, from providing proper words for
+  Haskell identifiers.
 * In keeping with other programming languages, Haskell uses the “maximal munch” rule for both identifers and symbolic
   operators. But symbol characters are not meant to be syntactically combined with each other. The multi-character
   operators like ``<=`` are a legacy that exists only due to the small size of the legacy ASCII character set; the
@@ -101,7 +102,39 @@ The changes can be explained and justified as follows:
   symbol character and only at the beginning. The symbol character can be followed only by combining characters.
 * Equivalently, every mathematical alphanumeric symbol represents a whole identifier, together with any following
   combining characters and digits.
-* As a consequence, the sequence of characters ``𝛌x.x`` would be tokenized into four distinct tokens. 
+* As a consequence, the sequence of characters ``𝛌x.x`` would be tokenized into four distinct tokens. The identifier 𝛌
+  (U+1D6CC) should be added to the list of reserved words, to prepare the ground for a future proposal that makes it a
+  valid alternative for the backslash.
+
+Examples
+########
+
+Arabic
+العربية - "Arabic", a word of Arabic written in the Arabic script
+ا̊لعربية - same word with a *combining ring above* the first character, marking it as capital
+ا̥لعربية - same word with a *combining ring below* the first character, marking it as capital
+
+Devanagari
+भोजपुरी - "Bhojpuri", a word of the Bhojpuri language written in the Devanagari script
+भो͘जपुरी - same word with a *combining dot above right* of the first character, marking it as capital
+भो᪶जपुरी - same word with a *combining wiggly line below* of the first character, marking it as lowercase
+
+ⁱfoo
+ⁿbarˆ
+
+𝚺
+sin𝛼
+x⃗
+x′ʹ
+
+
+𝐈x   = x
+𝐊𝑥𝑦  = 𝑥
+𝐒𝑥𝑦𝑧 = 𝑥𝑧(𝑦𝑧)
+
+𝐖 = 𝐒𝐒(𝐒𝐊)
+
+a⇒b = a∨¬b
 
 
 #########
@@ -131,7 +164,22 @@ As noted above, the proposal is limited to the lexical layer of the language. A 
 eliminate the false uppercase/lowercase dichotomy from the syntax altogether. Both Agda and Idris have done that with no
 obvious adverse consequences.
 
+The Unicode Consortium itself suggests a <Default Identifier
+Syntax>`https://www.unicode.org/reports/tr31/tr31-10.html#Default_Identifier_Syntax`_ that takes into consideration many
+more problems than considered here, but is also much more complex that the proposed syntax.
 
 ####################
 Unresolved questions
 ####################
+
+It is unclear if the *combiningBelow* / *combiningAbove* hack is enough to enable the use of non-European scripts. The
+proper answer can be given only by a poll of Haskell users. The set of possible answers would include:
+* I only ever write English identifiers in Haskell.
+* I only write identifiers using Latin or Cyrillic scripts with no diacritical modifiers.
+* I wish I could write Haskell with identifiers in my native language,
+  * and with this extension I would
+  * the proposed extension is insufficient, but a step in the right direction
+  * but the proposed extension is useless.
+
+If this proposal were adopted, the next step would be to move up a layer to the language syntax. Most importantly, the
+newly available mathematical lambda keyword should be allowed instead of its sad backslash immitation.
