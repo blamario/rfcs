@@ -18,18 +18,22 @@ Motivation
 ##########
 
 There are several problems with the way Haskell grapples with Unicode:
-* The language fundamentally insists on classifying all identifiers as either capital or lowercase identifiers at the
-  lexical layer, but many Unicode scripts don't even recognize the concept. No word of Arabic, Chinese, and most other
-  languages that use non-European scripts cannot be Haskell identifiers as a consequence.
+* Outside of comments and strings, all letters allowed in a Haskell program must be either title case, uppercase or
+  lowercase letters. Most Unicode letters don't belong to any of these categories because their scripts don't
+  distinguish cases. Haskell completely disallows them at the lexical layer for no good reason.
+* Actually there is one moderately good reason to disallow uncased letters, but only at the beginning of an identifier:
+  the language fundamentally insists on classifying all identifiers as either capital or lowercase identifiers. As a
+  consequence, no word of Arabic, Chinese, and most other languages that use non-European scripts is allowed as a
+  Haskell identifier.
 * Another problem with the lexical identifier syntax is that it admits no accents and other modifier characters. This
   excludes or deters yet another class of languages, such as modern Greek or Navajo, from providing proper words for
   Haskell identifiers.
 * In keeping with other programming languages, Haskell uses the “maximal munch” rule for both identifers and symbolic
   operators. But symbol characters are not meant to be syntactically combined with each other. The multi-character
   operators like ``<=`` are a legacy that exists only due to the small size of the legacy ASCII character set; the
-  proper representation for the operation is the single character ``≤``.
-* The same objection appplies to alphanumeric symbols, such as enclosed (Ⓐ) and mathematical (ℕ) alphanumerics. Even
-  though these are letters and they read as identifiers, they are not meant to be combined into words.
+  proper representation for the operator is the single character ``≤``.
+* The same objection applies to alphanumeric symbols, such as mathematical (ℕ) alphanumerics. Even though these are
+  letters and they read as identifiers, they are not meant to be combined into words.
 * The language syntax is restricted to ASCII characters, even when Unicode offers superior alternatives. `GHC's
   UnicodeSyntax extension
   <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#ghc-flag--XUnicodeSyntax>`_
@@ -79,63 +83,68 @@ The present proposal changes the lexical syntax to the following:
 |                 \\ ⟨*reservedop* | *dashes*⟩
 |   \ *consym* → (: {*symbol* | *combining*}) \\ *reservedop*
 
-|   \ *idCharacter* → *small* | *large* | *uncased* | *modifier*
-|   \ *modifier* → *digit* | *combining* | '
-|   \ *small*    → *ascSmall* | *uniSmall* \\ *mathSmall* | _ | *uncased* *combiningBelow*
-|   \ *large*    → *ascLarge* | *uniLarge* \\ *mathLarge* | *uncased* *combiningAbove*
-|   \ *uncased* → any Unicode letter with no case
+|   \ *idCharacter* → *letter* | *digit* | *modifier*
+|   \ *modifier* → *modifierLetter* | *combining* | '
+|   \ *small*    → *ascSmall* | *uniSmall* \\ *mathSmall* | _ | *specialSmall*
+|   \ *large*    → *ascLarge* | *uniLarge* \\ *mathLarge* | *specialLarge*
+|   \ *letter* → any Unicode letter
 
 |   \ *mathSmall* → any Unicode lowercase mathematical letter (i.e., with the derived property ``Math``)
-|   \ *mathLarge* → any Unicode capital mathematical letter
+|   \ *mathLarge* → any Unicode uppercase mathematical letter
 |   \ *uniSymbol* → any Unicode symbol or punctuation
 
-|   \ *combining* → any Unicode combining character
-|   \ *combiningBelow* → any Unicode combining character below the base character
-|   \ *combiningAbove* → any Unicode combining character above the base character
+|   \ *modifierLetter* -> any Unicode modifier letter (with general class ``Lm``) 
+|   \ *combining* → any Unicode combining character (with general class ``Mn``, ``Mc``, or ``Me``) 
+|   \ *specialSmall* → Unicode character 02F9 (˹)
+|   \ *specialLarge* → Unicode character 02FA (˻)
 
 
 The changes can be explained and justified as follows:
-* The new lexical syntax permits arbitrary combining characters in both identifiers and symbols.
-* The purpose of the *combiningBelow* and *combiningAbove* characters is to fake the case distinction. An identifier
-  that starts with a non-cased letter must have one of these combining characters immediately following the letter.
+* The new lexical syntax permits all Unicode letters in identifiers. Any word in a script that supports no casing can be
+  made capital-case by preceding it by the character ˹ (02F9 - MODIFIER LETTER BEGIN HIGH TONE), or lowercase by
+  preceding it by the character ˻ (02FB - MODIFIER LETTER BEGIN LOW TONE).
+
+
+  Example in Arabic:
+  العربية - "Arabic", a word of Arabic written in the Arabic script
+  ˹العربية - same word preceded by the *modifier letter begin high tone* character, marking it as capital
+  ˻العربية - same word with a *modifier letter begin low tone* the first character, marking it as lowercase
+
+  Example in Devanagari:
+  भोजपुरी - "Bhojpuri", a word of the Bhojpuri language written in the Devanagari script
+  ˹भोजपुरी - same word preceded by the *modifier letter begin high tone* character, marking it as capital
+  ˻भोजपुरी - same word preceded by the *modifier letter begin low tone* character, marking it as lowercase
+
+* The new lexical syntax permits arbitrary combining characters and modifier letters in both identifiers and symbols.
+
+  Examples:
+
+  f x x′ x″
+  f x x̊ x̉
+  résumé
+
 * While a single symbol token can still contain a sequence of ASCII symbols, it can only contain a single non-ASCII
   symbol character and only at the beginning. The symbol character can be followed only by combining characters.
+
+  Examples:
+
+  x≠-1
+  a⇒b = a∨¬b
+  APL operator strings like X[⍋X+.≠' ';]
+
 * Equivalently, every mathematical alphanumeric symbol represents a whole identifier, together with any following
-  combining characters and digits.
-* As a consequence, the sequence of characters ``𝛌x.x`` would be tokenized into four distinct tokens. The identifier 𝛌
-  (U+1D6CC) should be added to the list of reserved words, to prepare the ground for a future proposal that makes it a
-  valid alternative for the backslash.
+  combining characters and modifier letters.
 
-Examples
-########
+  Examples:
+  
+  𝐈x   = x
+  𝐊𝑥𝑦  = 𝑥
+  𝐒𝑥𝑦𝑧 = 𝑥𝑧(𝑦𝑧)
+  𝐖 = 𝐒𝐒(𝐒𝐊)
 
-Arabic
-العربية - "Arabic", a word of Arabic written in the Arabic script
-ا̊لعربية - same word with a *combining ring above* the first character, marking it as capital
-ا̥لعربية - same word with a *combining ring below* the first character, marking it as capital
-
-Devanagari
-भोजपुरी - "Bhojpuri", a word of the Bhojpuri language written in the Devanagari script
-भो͘जपुरी - same word with a *combining dot above right* of the first character, marking it as capital
-भो᪶जपुरी - same word with a *combining wiggly line below* of the first character, marking it as lowercase
-
-ⁱfoo
-ⁿbarˆ
-
-𝚺
-sin𝛼
-x⃗
-x′ʹ
-
-
-𝐈x   = x
-𝐊𝑥𝑦  = 𝑥
-𝐒𝑥𝑦𝑧 = 𝑥𝑧(𝑦𝑧)
-
-𝐖 = 𝐒𝐒(𝐒𝐊)
-
-a⇒b = a∨¬b
-
+* As a consequence, the sequence of characters ``𝛌x.x`` would be tokenized into four distinct tokens. This open the
+  opportunity to add the identifier 𝛌 (U+1D6CC) to the list of reserved words, to prepare the ground for a future
+  proposal that makes it a valid alternative for the backslash.
 
 #########
 Drawbacks
@@ -152,17 +161,20 @@ existing libraries that can help with that.
 
 While the proposal is rather ambitious in some ways, it changes only the lexical syntax of Haskell. As a consequence,
 the unfortunate distinction between the capital and lowercase identifiers imposed by the higher-level syntax is still in
-place. Scripts of non-European origin that don't have any case distinctions can now be used with the *combiningBelow*
-and *combiningAbove* characters, but this is only a fig leaf.
+place. Scripts of non-European origin that don't have any case distinctions can now be used with the *specialSmall*
+and *specialLarge* characters, but this is only a fig leaf.
 
 
 ############
 Alternatives
 ############
 
-As noted above, the proposal is limited to the lexical layer of the language. A more ambitious alternative would be to
-eliminate the false uppercase/lowercase dichotomy from the syntax altogether. Both Agda and Idris have done that with no
-obvious adverse consequences.
+The present proposal combines several modifications to Haskell's lexical syntax of identifiers and symbols. If some of
+the parts are deemed better than the others, they can be implemented alone.
+
+The proposal is limited to the lexical layer of the language. A more ambitious alternative would be to eliminate the
+false uppercase/lowercase dichotomy from the syntax altogether. Both Agda and Idris have done that with no obvious
+adverse consequences.
 
 The Unicode Consortium itself suggests a <Default Identifier
 Syntax>`https://www.unicode.org/reports/tr31/tr31-10.html#Default_Identifier_Syntax`_ that takes into consideration many
@@ -172,7 +184,7 @@ more problems than considered here, but is also much more complex that the propo
 Unresolved questions
 ####################
 
-It is unclear if the *combiningBelow* / *combiningAbove* hack is enough to enable the use of non-European scripts. The
+It is unclear if the *specialSmall* / *specialLarge* hack is enough to enable the use of non-European scripts. The
 proper answer can be given only by a poll of Haskell users. The set of possible answers would include:
 * I only ever write English identifiers in Haskell.
 * I only write identifiers using Latin or Cyrillic scripts with no diacritical modifiers.
