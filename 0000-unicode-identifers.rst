@@ -10,8 +10,10 @@ Summary
 #######
 
 The lexical syntax of Haskell'98 has been designed primarily for the ASCII character set. The language report does
-acknowledge Unicode as an afterthought, but there are large gaps in its support. This proposal aims to rectify this
-while retaining backward compatibility with all existing ASCII-only Haskell code.
+acknowledge Unicode as an afterthought, but there are large gaps in its support. This broad goals of this proposal areto:
+* most importantly, highlight some longstanding problems with Haskell's treatment of Unicode,
+* suggest a package of remedies that retains backward compatibility with all existing ASCII-only Haskell code, and
+* provide a starting point of a wider discussion of the solution space.
 
 ##########
 Motivation
@@ -130,7 +132,7 @@ The changes can be explained and justified as follows:
 
   x≠-1
   a⇒b = a∨¬b
-  APL operator strings like X[⍋X+.≠' ';]
+  APL and similar operator sequences
 
 * Equivalently, every mathematical alphanumeric symbol represents a whole identifier, together with any following
   combining characters and modifier letters.
