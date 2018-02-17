@@ -11,38 +11,36 @@ Summary
 
 The lexical syntax of Haskell'98 has been designed primarily for the ASCII character set. The language report does
 acknowledge Unicode as an afterthought, but there are large gaps in its support. This broad goals of this proposal are
-to:
-
-* most importantly, highlight some longstanding problems with Haskell's treatment of Unicode,
-* suggest a package of remedies that retains backward compatibility with all existing ASCII-only Haskell code, and
-* provide a starting point of a wider discussion of the solution space.
+to: 
+  * most importantly, highlight some longstanding problems with Haskell's treatment of Unicode,
+  * suggest a package of remedies that retains backward compatibility with all existing ASCII-only Haskell code, and
+  * provide a starting point of a wider discussion of the solution space.
 
 ##########
 Motivation
 ##########
 
 There are several problems with the way Haskell grapples with Unicode:
-
-* Outside of comments and strings, all letters allowed in a Haskell program must be either title case, uppercase or
-lowercase letters. Most Unicode letters don't belong to any of these categories because their scripts don't
-distinguish cases. Haskell completely disallows them at the lexical layer for no good reason.
-* Actually there is one moderately good reason to disallow uncased letters, but only at the beginning of an
-identifier: the language fundamentally insists on classifying all identifiers as either capital or lowercase
-identifiers. As a consequence, no word of Arabic, Chinese, and most other languages that use non-European scripts is
-allowed as a Haskell identifier.
-* Another problem with the lexical identifier syntax is that it admits no accents and other modifier characters. This
-excludes or deters yet another class of languages, such as modern Greek or Navajo, from providing proper words for
-Haskell identifiers.
-* In keeping with other programming languages, Haskell uses the “maximal munch” rule for both identifers and symbolic
-operators. But symbol characters are not meant to be syntactically combined with each other. The multi-character
-operators like ``<=`` are a legacy that exists only due to the small size of the legacy ASCII character set; the
-proper representation for the operator is the single character ``≤``.
-* The same objection applies to alphanumeric symbols, such as mathematical (ℕ) alphanumerics. Even though these are
-letters and they read as identifiers, they are not meant to be combined into words.
-* The language syntax is restricted to ASCII characters, even when Unicode offers superior alternatives. `GHC's
-UnicodeSyntax extension
-<https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#ghc-flag--XUnicodeSyntax>`_
-rectifies this to some extent, but it doesn't fill all the gaps.
+  * Outside of comments and strings, all letters allowed in a Haskell program must be either title case, uppercase or
+    lowercase letters. Most Unicode letters don't belong to any of these categories because their scripts don't
+    distinguish cases. Haskell completely disallows them at the lexical layer for no good reason.
+  * Actually there is one moderately good reason to disallow uncased letters, but only at the beginning of an
+    identifier: the language fundamentally insists on classifying all identifiers as either capital or lowercase
+    identifiers. As a consequence, no word of Arabic, Chinese, and most other languages that use non-European scripts
+    is allowed as a Haskell identifier.
+  * Another problem with the lexical identifier syntax is that it admits no accents and other modifier
+    characters. This excludes or deters yet another class of languages, such as modern Greek or Navajo, from providing
+    proper words for Haskell identifiers.
+  * In keeping with other programming languages, Haskell uses the “maximal munch” rule for both identifers and
+    symbolic operators. But symbol characters are not meant to be syntactically combined with each other. The
+    multi-character operators like ``<=`` are a legacy that exists only due to the small size of the legacy ASCII
+    character set; the proper representation for the operator is the single character ``≤``.
+  * The same objection applies to alphanumeric symbols, such as mathematical (ℕ) alphanumerics. Even though these are
+    letters and they read as identifiers, they are not meant to be combined into words.
+  * The language syntax is restricted to ASCII characters, even when Unicode offers superior alternatives. `GHC's
+    UnicodeSyntax extension
+    <https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#ghc-flag--XUnicodeSyntax>`_
+    rectifies this to some extent, but it doesn't fill all the gaps.
 
 This proposal attempts to resolve all these issues at once.
 
@@ -54,7 +52,7 @@ The existing lexical syntax of Haskell variable identifiers and symbols is speci
 
 |   \ *varid*  → (*small* {*idCharacter*}) \\ *reservedid*
 |   \ *conid*  → *large* {*idCharacter*}
-|   \ *varsym* → ((*symbol* \\ :) {*symbol*}) \\ ⟨*reservedop* | *dashes*⟩
+|   \ *varsym* → ((*symbol* \\ :) {*symbol*}) \\ (*reservedop* | *dashes*)
 |   \ *consym* → (: {*symbol*}) \\ *reservedop*
 
 |   \ *idCharacter* → *small* | *large* | *digit* | '
@@ -71,7 +69,7 @@ The existing lexical syntax of Haskell variable identifiers and symbols is speci
 |   \ *ascDigit* → 0 | 1 | … | 9
 |   \ *uniDigit* → any Unicode decimal digit
 
-|   \ *symbol*    → *ascSymbol* | *uniSymbol* \\ ⟨*special* | _ | " | '⟩
+|   \ *symbol*    → *ascSymbol* | *uniSymbol* \\ (*special* | _ | " | ')
 |   \ *ascSymbol* → ! | # | $ | % | & | ⋆ | + | . | / | < | = | > | ? | @ | \\ | ^ | | | - | ~ | :
 |   \ *uniSymbol* → any Unicode symbol or punctuation
 |   \ *special*   → ( | ) | , | ; | [ | ] | ` | { | }
@@ -84,7 +82,7 @@ The present proposal changes the lexical syntax to the following:
 
 |   \ *varid*   → (*small* {*idCharacter*} | *mathSmall* {*modifier*}) \\ *reservedid*
 |   \ *conid*   → *large* {*idCharacter*} | *mathLarge* {*modifier*}
-|   \ *varsym*  → ((*ascSymbol* \\ :) {*ascSymbol* | *combining*} | *uniSymbol* {*combining*}) \\ ⟨*reservedop* | *dashes*⟩
+|   \ *varsym*  → ((*ascSymbol* \\ :) {*ascSymbol* | *combining*} | *uniSymbol* {*combining*}) \\ (*reservedop* | *dashes*)
 |   \ *consym* → (: {*symbol* | *combining*}) \\ *reservedop*
 
 |   \ *idCharacter* → *letter* | *digit* | *modifier*
@@ -195,6 +193,7 @@ proper answer can be given only by a poll of Haskell users. The set of possible 
 * I only ever write English identifiers in Haskell.
 * I only write identifiers using Latin or Cyrillic scripts with no diacritical modifiers.
 * I wish I could write Haskell with identifiers in my native language,
+
   * and with this extension I would
   * the proposed extension is insufficient, but a step in the right direction
   * but the proposed extension is useless.
