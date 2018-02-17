@@ -102,6 +102,9 @@ The present proposal changes the lexical syntax to the following:
 |   \ *specialLarge* → Unicode character 02FA (˻)
 
 
+Explanations
+------------
+
 The changes can be explained and justified as follows:
 
 * The new lexical syntax permits all Unicode letters in identifiers. Any word in a script that supports no casing can
