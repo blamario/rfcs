@@ -11,10 +11,11 @@ Summary
 
 The lexical syntax of Haskell'98 has been designed primarily for the ASCII character set. The language report does
 acknowledge Unicode as an afterthought, but there are large gaps in its support. This broad goals of this proposal are
-to: 
-  * most importantly, highlight some longstanding problems with Haskell's treatment of Unicode,
-  * suggest a package of remedies that retains backward compatibility with all existing ASCII-only Haskell code, and
-  * provide a starting point of a wider discussion of the solution space.
+to:
+
+* most importantly, highlight some longstanding problems with Haskell's treatment of Unicode,
+* suggest a package of remedies that retains backward compatibility with all existing ASCII-only Haskell code, and
+* provide a starting point of a wider discussion of the solution space.
 
 ##########
 Motivation
@@ -109,11 +110,13 @@ The changes can be explained and justified as follows:
 
 
   Example in Arabic:
+  
   - العربية - "Arabic", a word of Arabic written in the Arabic script
   - ˹العربية - same word preceded by the *modifier letter begin high tone* character, marking it as capital
   - ˻العربية - same word with a *modifier letter begin low tone* the first character, marking it as lowercase
 
   Example in Devanagari:
+  
   - भोजपुरी - "Bhojpuri", a word of the Bhojpuri language written in the Devanagari script
   - ˹भोजपुरी - same word preceded by the *modifier letter begin high tone* character, marking it as capital
   - ˻भोजपुरी - same word preceded by the *modifier letter begin low tone* character, marking it as lowercase
@@ -180,7 +183,7 @@ false uppercase/lowercase dichotomy from the syntax altogether. Both Agda and Id
 adverse consequences.
 
 The Unicode Consortium itself suggests a `Default Identifier
-Syntax<https://www.unicode.org/reports/tr31/tr31-10.html#Default_Identifier_Syntax>`_ that takes into consideration
+Syntax <https://www.unicode.org/reports/tr31/tr31-10.html#Default_Identifier_Syntax>`_ that takes into consideration
 many more problems than considered here, but is also much more complex that the proposed syntax.
 
 ####################
